@@ -16,45 +16,50 @@ height = 103
 # width = 11
 # height = 7
 
-import zlib
-def compressed_size(positions):
-    bitstring = ""
-    for y in range(height):
-        for x in range(width):
-            if (x, y) in positions:
-                bitstring += "1"
-            else:
-                bitstring += "0"
-    # print(len(bitstring))
-    compressed = zlib.compress(bitstring.encode())
-    # print(compressed)
-    return len(compressed)
+
+def print_robots(positions, score, iteration, file_location = "test.txt"):
+    with open(file_location, "w") as f:
+        print(score, iteration, file=f)
+        for y in range(height):
+            for x in range(width):
+                if (x, y) in positions:
+                    print("#", end="", file=f)
+                else:
+                    print(" ", end="", file=f)
+            print(file=f)
+        for _ in range(3):
+            for _ in range(width):
+                print("-", end="", file=f)
+            print(file=f)
 
 
-def print_robots(positions):
-    for y in range(height):
-        for x in range(width):
-            if (x, y) in positions:
-                print(".", end="")
-            else:
-                print("#", end="")
-        print()
-    print("\n\n\n")
+
+def average_surround(positions):
+    total_surround = 0
+    for x, y in positions:
+        for difx, dify in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+            newx = x + difx
+            newy = y + dify
+            if (newx, newy) in positions:
+                total_surround += 1
+    return total_surround / len(positions)
 
 
-lowest_randomness = 100000000000000000000
-best_positions = []
+highest_surround = 0
+highest_surround_positions = []
 
-for s in range(100000):
+from tqdm import tqdm
+for s in tqdm(range(8006)):
     for i in range(len(positions)):
         p = positions[i]
         v = velocities[i]
         positions[i] = ((p[0] + v[0]) % width, (p[1] + v[1]) % height)
-    randomness = compressed_size(positions)
-    if randomness < lowest_randomness:
-        lowest_randomness = randomness
-        best_positions = [p for p in positions]
-        print_robots(best_positions)
+    # a = average_surround(positions)
+    # if a > highest_surround:
+    #     highest_surround = a
+    #     highest_surround_positions = [p for p in positions]
+    # print_robots(positions, highest_surround, s)
+print_robots(positions, 0, 0)
 
 
 

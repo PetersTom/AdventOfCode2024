@@ -21,6 +21,17 @@ def flood_fill(y, x):
     return visited  # visited
 
 
+def perimeter(area):
+    perim = 0
+    for y, x in area:
+        for ny, nx in neighbors(y, x):
+            if ny < 0 or ny >= len(plants) or nx < 0 or nx >= len(plants[y]):
+                perim += 1
+            elif plants[ny][nx] != plants[y][x]:
+                perim += 1
+    return perim
+
+
 def neighbors(y, x):
     for dify, difx in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
         yield y + dify, x + difx
@@ -70,13 +81,14 @@ for y in range(len(plants)):
             continue
         visited = flood_fill(y, x)
         total_visited = total_visited | visited
+        sides = perimeter(visited)
 
-        vertices = 0
-        for py, px in visited:
-            vertices += angles90(py, px) +  angles270(py, px)
-        # F + V - E = 1
-        # E = F + V - 1
-        sides = 1 + vertices - 1
+        # vertices = 0
+        # for py, px in visited:
+        #     vertices += angles90(py, px) +  angles270(py, px)
+        # # F + V - E = 1
+        # # E = F + V - 1
+        # sides = 1 + vertices - 1
 
         areas.append((len(visited), sides, plants[y][x]))
 
