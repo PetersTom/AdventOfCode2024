@@ -16,76 +16,80 @@ for y in range(len(grid)):
             grid[y][x] = "."
 
 
-class PrioNode:
-    def __init__(self, score, item, dir):
-        self.score = score
-        self.dist = dist(item, end)
-        self.item = item
-        self.dir = dir
-
-    def __lt__(self, other):
-        return self.score + self.dist < other.score + other.dist
-
-    def __eq__(self, other):
-        return self.item == other.item and self.dir == other.dir
-
-    def __hash__(self):
-        return self.item.__hash__() + self.dir.__hash__()
-
-    def __str__(self):
-        return str(self.item) + "-" + str(self.dir) + "-" + str(self.score + self.dist)
-
-def neighbors(p: PrioNode):
+def dijkstra_neighbors(score, node):
     neighs = []
-    neighs.append(PrioNode(p.score + 1000, (p.item[0], p.item[1]), ((p.dir + 1) % 4)))
-    neighs.append(PrioNode(p.score + 1000, (p.item[0], p.item[1]), ((p.dir - 1) % 4)))
-    if p.dir not in [0, 1, 2, 3]:
-        print("hello")
-        pass
-    dify, difx = [(-1, 0), (0, 1), (1, 0), (0, -1)][p.dir]
-    newy, newx = p.item[0] + dify, p.item[1] + difx
+    y, x, dir = node
+    neighs.append((score + 1000, (y, x, (dir + 1) % 4)))
+    neighs.append((score + 1000, (y, x, (dir - 1) % 4)))
+    dify, difx = [(-1, 0), (0, 1), (1, 0), (0, -1)][dir]
+    newy, newx = y + dify, x + difx
     if 0 <= newy < len(grid) and 0 <= newx < len(grid[y]):
         if grid[newy][newx] == ".":
-            neighs.append(PrioNode(p.score + 1, (newy, newx), p.dir))
+            neighs.append((score + 1, (newy, newx, dir)))
     return neighs
 
 
-def dist(p1, p2):
-    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+def find_paths_dijkstra(parents, start, end, end_dir):
+    p = (*end, end_dir)
+
+    part_of_a_path = []
+    front = {p}
+
+    while not (len(front) == 1 and next(iter(front)) == start):
+        next_front = set()
+        for p in front:
+            part_of_a_path.append(p)
+            parents_of_p = parents[p]
+            for ps in parents_of_p:
+                next_front.add(ps)
+        front = next_front
+
+    return part_of_a_path
 
 
-def find_path(parents, start, end):
-    path = []
-    for dir in [0, 1, 2, 3]:
-        if (end, dir) in parents:
-            break
-    p = end
-
-    while p[0] != start[0] and p[1] != start[1]:
-        path.append(p)
-        p, dir = parents[(p, dir)]
-    return path
-
-
-def AStar(start, end):
+def dijkstra(start, end):
 
     parents = {}
+    dist_per_node = {}
 
-    open = [PrioNode(0, (start[0], start[1]), start[2])]
-    closed = set()
+    current = (0, start)
+    queue = [current]
+    while len(queue) > 0:
+        score, v = heapq.heappop(queue)
+        if (v[0], v[1]) == end:
+            return score, find_paths_dijkstra(parents, start, end, v[2])
+        neighs = dijkstra_neighbors(score, v)
+        for s, n in neighs:
+            if n not in dist_per_node.keys() or dist_per_node[n] >= s:
+                if n not in dist_per_node:
+                    heapq.heappush(queue, (s, n))
+                elif dist_per_node[n] > s:
+                    heapq.heappush(queue, (s, n))
 
-    while True:
-        v = heapq.heappop(open)
-        if v.item == end:
-            # found the end
-            # do something
-            return v.score + v.dist, find_path(parents, start, end)
-        closed.add(v)
-        neighs = neighbors(v)
-        for n in neighs:
-            if n not in closed:
-                heapq.heappush(open, n)
-                parents[(n.item, n.dir)] = (v.item, v.dir)
+                if n not in dist_per_node.keys() or dist_per_node[n] == s:
+                    if n in parents:
+                        parents[n].append(v)
+                    else:
+                        parents[n] = [v]
+                elif dist_per_node[n] > s:
+                    assert n in parents
+                    parents[n] = [v]
+                dist_per_node[n] = s
 
 
-print(AStar(start, end))
+best_scoreDijkstra, nodes_on_path = dijkstra(start, end)
+
+nodes_on_path = set([(x[0], x[1]) for x in nodes_on_path])
+print(len(nodes_on_path))
+for y in range(len(grid)):
+    for x in range(len(grid[y])):
+        if grid[y][x] == "#":
+            print("#", end='')
+        elif grid[y][x] == ".":
+            if (y, x) in nodes_on_path:
+                print("O", end='')
+            else:
+                print(".", end='')
+    print()
+
+print(best_scoreDijkstra, len(nodes_on_path))
